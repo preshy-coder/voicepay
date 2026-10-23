@@ -14,17 +14,20 @@ from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from . import bank as bank_mod, security, service
+from .config import get_settings
+from .notify import send_otp
+from .ratelimit import RateLimiter
 
 BANK = bank_mod.MockBank()
 INDEX = Path(__file__).parent / "static" / "index.html"
 
 
-def console_otp(user_id: int, otp: str) -> None:
-    print(f"[SMS to user {user_id}] Your VoicePay code is {otp}")
+_cfg = get_settings()
+LIMITER = RateLimiter(_cfg.login_attempts, _cfg.window_seconds)
 
 
 class Handler(BaseHTTPRequestHandler):
-    notify = staticmethod(console_otp)
+    notify = staticmethod(send_otp)
 
     def _send(self, status, body):
         data = json.dumps(body).encode()
@@ -61,6 +64,8 @@ class Handler(BaseHTTPRequestHandler):
             return 201, {"user_id": service.register(str(b.get("username", "")), str(b.get("pin", "")))}
         if method == "POST" and path == "/login":
             b = self._json()
+            if not LIMITER.allow(f"login:{self.client_address[0]}:{b.get('username', '')}"):
+                raise service.ServiceError("too many attempts, try again later", 429)
             return 200, {"token": service.login(str(b.get("username", "")), str(b.get("pin", "")))}
         uid = self._user()
         if method == "POST" and path == "/contacts":
@@ -71,6 +76,8 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/transactions/([0-9a-f]{32})/verify", path)
         if method == "POST" and m:
             b = self._json()
+            if not LIMITER.allow(f"verify:{uid}"):
+                raise service.ServiceError("too many attempts, try again later", 429)
             otp = b.get("otp")
             return 200, service.verify_and_execute(uid, m.group(1), str(b.get("pin", "")), str(otp) if otp else None, BANK)
         if method == "GET" and path == "/transactions":

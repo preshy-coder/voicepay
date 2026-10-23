@@ -11,6 +11,5 @@ asks for the right level of proof, and only then moves money.
 A voice command **never moves money by itself**. It only creates a pending transaction.
 Money moves after a separate verification call.
 
-## Security design
 
 

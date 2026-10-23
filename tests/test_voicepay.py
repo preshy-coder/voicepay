@@ -100,6 +100,13 @@ class ApiTests(unittest.TestCase):
         self.call("POST", "/register", {"username": name, "pin": "4321"})
         return self.call("POST", "/login", {"username": name, "pin": "4321"})[1]["token"]
 
+    def test_serves_demo_page(self):
+        with urllib.request.urlopen(self.base + "/") as r:
+            html = r.read().decode()
+            self.assertEqual(r.status, 200)
+            self.assertIn("VoicePay", html)
+            self.assertIn("Content-Security-Policy", r.headers)
+
     def test_requires_auth(self):
         self.assertEqual(self.call("GET", "/transactions")[0], 401)
 

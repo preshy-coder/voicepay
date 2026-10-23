@@ -60,7 +60,7 @@ python -m voicepay                      # starts on http://127.0.0.1:8000
 python -m unittest discover -s tests    # run the test suite
 ```
 
-OTP codes are printed to the server console in sandbox mode (SMS in production).
+Then open **http://127.0.0.1:8000** for the demo page: register, save a contact, click the 🎤 and say *"send 500 to John"* (voice works in Chrome and Edge; there's a typing fallback). OTP codes are printed to the server console in sandbox mode (SMS in production).
 
 ### Example session
 
@@ -93,12 +93,12 @@ confirms the final result, all of which stay inside the adapter.
 
 ## Roadmap
 
-- Real speech-to-text (Whisper / Web Speech API) in front of `/voice/command`
+- Server-side speech-to-text (Whisper) as an alternative to the browser's Web Speech API
 - Voice liveness / speaker verification as an extra signal
 - Daraja adapter with webhook confirmation
 - Move to FastAPI + PostgreSQL, add rate limiting and TLS termination
 - ML anomaly scoring alongside the rule engine
-- Web / mobile client with push-based approvals
+- Mobile client with push-based approvals
 
 ## Project layout
 
@@ -109,6 +109,7 @@ voicepay/
   security.py  PIN hashing, OTP, signed tokens
   bank.py      adapter interface, MockBank, Daraja stub
   service.py   business logic
-  server.py    JSON HTTP API
-tests/         16 tests: parser, fraud rules, security, full API flows
+  server.py    JSON HTTP API + serves the demo page
+  static/      demo web page with microphone button
+tests/         17 tests: parser, fraud rules, security, full API flows
 ```

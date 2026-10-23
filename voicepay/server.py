@@ -1,5 +1,6 @@
 """Minimal JSON HTTP API (standard library only).
 
+GET  /                    demo web page with microphone button
 POST /register            {username, pin}
 POST /login               {username, pin}                -> {token}
 POST /contacts            {name, phone}                  (auth)
@@ -9,11 +10,13 @@ GET  /transactions                                       (auth)
 """
 import json
 import re
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from . import bank as bank_mod, security, service
 
 BANK = bank_mod.MockBank()
+INDEX = Path(__file__).parent / "static" / "index.html"
 
 
 def console_otp(user_id: int, otp: str) -> None:
@@ -82,6 +85,16 @@ class Handler(BaseHTTPRequestHandler):
         self._send(status, body)
 
     def do_GET(self):
+        if self.path.split("?")[0] in ("/", "/index.html"):
+            data = INDEX.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Content-Security-Policy", "default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'")
+            self.end_headers()
+            self.wfile.write(data)
+            return
         self._handle("GET")
 
     def do_POST(self):
